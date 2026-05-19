@@ -47,6 +47,6 @@ if prompt := st.chat_input("AI에게 명령을 내려보세요! (예: 너는 300
                 response = st.session_state.chat.send_message(prompt)
                 message_placeholder.markdown(response.text)
             except Exception as e:
-                # 화면에는 다정하게 안내하고, 검은색 로그창에 진짜 원인을 출력합니다.
+                # 에러 발생 시, 아이들용 안내문 바로 밑에 진짜 에러를 노란색 박스로 강제 표시합니다.
                 st.error("앗, 너무 많은 친구들이 동시에 질문했나봐요! 10초만 기다렸다가 다시 해볼까요?")
-                print(f"❌ [진짜 에러 발견]: {e}")
+                st.warning(f"🔍 식이쌤 확인용 진짜 에러 메시지: {e}")
