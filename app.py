@@ -47,7 +47,7 @@ if prompt := st.chat_input("AI에게 명령을 내려보세요! (예: 너는 300
                         )
                     )
                 
-                # 최신 고속 엔진(gemini-1.5-flash)과 대화방 개설
+                # [수정] 구글 서버 과부하를 피하기 위해 가장 검증되고 안정적인 1.5-flash 모델로 변경
                 chat = client.chats.create(
                     model="gemini-1.5-flash",
                     history=chat_history,
