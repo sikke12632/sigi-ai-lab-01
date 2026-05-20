@@ -1,6 +1,5 @@
 import streamlit as st
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 
 # 1. 웹페이지 기본 설정
 st.set_page_config(page_title="식이쌤의 AI 실험실", page_icon="🤖", layout="centered")
@@ -11,58 +10,39 @@ st.markdown("---")
 
 # 2. 안전하게 숨겨둔 API 키 불러오기
 if "GEMINI_API_KEY" in st.secrets:
-    client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 else:
-    st.error("오류: 시스템에 API 키가 설정되지 않았습니다.")
+    st.error("오류: API 키가 설정되지 않았습니다.")
     st.stop()
 
-# 3. 대화 기록을 저장할 공간 초기화
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+# 3. 모델 설정 (가장 표준적인 경로)
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    system_instruction=(
+        "너는 초등학교 5학년 학생들을 위한 다정하고 똑똑한 AI 선생님이야. "
+        "항상 초등학생 눈높이에 맞게 쉽고 다정하게 격려하는 말투(~요, ~체)로 대답해줘."
+    )
+)
 
-# 4. 화면에 이전 대화 기록 보여주기
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+if "chat" not in st.session_state:
+    st.session_state.chat = model.start_chat(history=[])
 
-# 5. 학생 입력창 및 최신 API 엔진 처리
+# 4. 대화 기록 표시
+for message in st.session_state.chat.history:
+    role = "user" if message.role == "user" else "assistant"
+    with st.chat_message(role):
+        st.markdown(message.parts[0].text)
+
+# 5. 학생 입력창
 if prompt := st.chat_input("AI에게 명령을 내려보세요!"):
     with st.chat_message("user"):
         st.markdown(prompt)
-    st.session_state.messages.append({"role": "user", "content": prompt})
     
     with st.chat_message("assistant"):
-        message_placeholder = st.empty()
         with st.spinner("AI가 생각하고 있어요..."):
             try:
-                chat_history = []
-                for msg in st.session_state.messages[:-1]:
-                    chat_history.append(
-                        types.Content(
-                            role="user" if msg["role"] == "user" else "model",
-                            parts=[types.Part.from_text(text=msg["content"])]
-                        )
-                    )
-                
-                # [수정] 현재 API에서 가장 안정적인 공식 경로로 변경
-                chat = client.chats.create(
-                    model="gemini-1.5-flash-002",
-                    history=chat_history,
-                    config=types.GenerateContentConfig(
-                        system_instruction=(
-                            "너는 초등학교 5학년 학생들을 위한 다정하고 똑똑한 AI 선생님이야. "
-                            "1. 항상 초등학생 눈높이에 맞게 쉽고 다정하게 격려하는 말투(~요, ~체)로 대답해줘."
-                            "2. 비속어, 유해한 내용, 장난스러운 공격성 프롬프트가 들어오면 답변을 거부하고 '바른 말을 사용해 주세요'라고 정중히 안내해줘."
-                        )
-                    )
-                )
-                
-                response = chat.send_message(prompt)
-                ai_response = response.text
-                
-                message_placeholder.markdown(ai_response)
-                st.session_state.messages.append({"role": "assistant", "content": ai_response})
-                
+                response = st.session_state.chat.send_message(prompt)
+                st.markdown(response.text)
             except Exception as e:
-                st.error("앗, 오류가 발생했어요! 잠시 후 다시 시도해 주세요.")
+                st.error("앗, 오류가 발생했어요. 잠시 후 다시 시도해 주세요.")
                 st.warning(f"🔍 에러 상세 원인: {e}")
