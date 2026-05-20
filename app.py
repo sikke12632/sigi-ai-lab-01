@@ -47,9 +47,9 @@ if prompt := st.chat_input("AI에게 명령을 내려보세요! (예: 너는 300
                         )
                     )
                 
-                # 최신 고속 엔진(gemini-2.5-flash)과 대화방 개설
+                # 최신 고속 엔진(gemini-1.5-flash)과 대화방 개설
                 chat = client.chats.create(
-                    model="gemini-2.5-flash",
+                    model="gemini-1.5-flash",
                     history=chat_history,
                     config=types.GenerateContentConfig(
                         system_instruction=(
