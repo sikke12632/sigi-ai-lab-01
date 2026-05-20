@@ -15,14 +15,21 @@ else:
     st.error("오류: API 키가 설정되지 않았습니다.")
     st.stop()
 
-# 3. 모델 설정 (가장 표준적인 경로)
-model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
-    system_instruction=(
-        "너는 초등학교 5학년 학생들을 위한 다정하고 똑똑한 AI 선생님이야. "
-        "항상 초등학생 눈높이에 맞게 쉽고 다정하게 격려하는 말투(~요, ~체)로 대답해줘."
+# 3. [핵심] 사용 가능한 모델 자동 검색
+try:
+    # 생성 가능한 모델 중 가장 적합한 1.5-flash 계열을 자동으로 찾음
+    models = [m for m in genai.list_models() if 'generateContent' in m.supported_methods and 'gemini-1.5-flash' in m.name]
+    if not models:
+        st.error("모델을 찾을 수 없습니다. API 키를 다시 확인해주세요.")
+        st.stop()
+    selected_model = models[0].name
+    model = genai.GenerativeModel(
+        model_name=selected_model,
+        system_instruction="너는 초등학교 5학년 학생들을 위한 다정하고 똑똑한 AI 선생님이야. 항상 초등학생 눈높이에 맞게 쉽고 다정하게 격려하는 말투(~요, ~체)로 대답해줘."
     )
-)
+except Exception as e:
+    st.error(f"모델 설정 오류: {e}")
+    st.stop()
 
 if "chat" not in st.session_state:
     st.session_state.chat = model.start_chat(history=[])
